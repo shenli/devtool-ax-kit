@@ -15,9 +15,6 @@ and credential-handling behavior.
 - credential redaction and safety assertions; and
 - vendor-neutral failure-report templates.
 
-This repository contains only local, vendor-neutral tooling. Vendor fixtures,
-credentials, raw trajectories, and external-service experiments are excluded.
-
 ## Quick start
 
 Python 3.11+ is sufficient:
