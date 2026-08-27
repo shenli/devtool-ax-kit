@@ -1,0 +1,8 @@
+[project]
+name = "devtool-ax"
+version = "0.1.0"
+description = "Toolkit for testing agent experience in Agent-Native developer tools"
+requires-python = ">=3.11"
+
+[project.scripts]
+devtool-ax = "agent_run.cli:main"
