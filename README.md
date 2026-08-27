@@ -1,4 +1,4 @@
-# DevTool AX Kit
+# DevTool Agent-Experience Kit
 
 **Measure whether developer tools are understandable, recoverable, and
 verifiable for coding agents.**
