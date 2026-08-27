@@ -36,6 +36,10 @@ an evaluator outside its editable workspace checks observable behavior. Compare
 agent surfaces while holding the fixture, verifier, budget, and task intent
 constant. Repeat enough to distinguish a pattern from a one-off.
 
+## External-effect lifecycle
+
+For service-backed tasks, record: `provision → receipt → credential delivery → agent run → independent verify → cleanup`. Classify each trial as `pass`, `functional_fail`, `agent_report_disagrees`, `resource_unavailable`, or `safety_violation`; never count unavailable resources as functional results. Use unique identities and deliberate timing/concurrency trials for boundary-sensitive contracts.
+
 ## Further reading
 
 - OpenAI, [Harness engineering](https://openai.com/index/harness-engineering/)

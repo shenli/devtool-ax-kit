@@ -17,6 +17,8 @@ and credential-handling behavior.
 
 Read [the AX methodology](docs/agent-ax-methodology.md) for the evaluation
 dimensions, session/harness/sandbox model, and research foundation.
+See [the outcome taxonomy](docs/outcome-taxonomy.md) for consistent result
+classification.
 
 ## Quick start
 

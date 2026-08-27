@@ -11,3 +11,7 @@ before persistence and scan the resulting evidence.
 When a write has an uncertain outcome, do not repeat it blindly: pin the prior
 receipt and replay it as a non-executing lookup. Block unrecorded writes during
 replay. Keep credentials out of prompts, source files, snapshots, and reports.
+
+For external services, capture provisioning, credential delivery, execution,
+verification, and cleanup as separate lifecycle receipts. If a resource cannot
+be retrieved, record `resource_unavailable` and stop that trial.
