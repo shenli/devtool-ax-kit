@@ -15,6 +15,9 @@ and credential-handling behavior.
 - credential redaction and safety assertions; and
 - vendor-neutral failure-report templates.
 
+Read [the AX methodology](docs/agent-ax-methodology.md) for the evaluation
+dimensions, session/harness/sandbox model, and research foundation.
+
 ## Quick start
 
 Python 3.11+ is sufficient:

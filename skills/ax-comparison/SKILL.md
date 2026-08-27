@@ -12,3 +12,7 @@ transcript safety.
 Treat differences as agent-usability evidence unless the protocol isolates a
 vendor defect. Report non-reproductions and alternative explanations. Do not
 generalize from a single successful run.
+
+Attribute each failure to one layer where possible: task/model, harness/session,
+tool interface, or external infrastructure. Track human attention and verifier
+disagreement alongside completion and wall-clock time.

@@ -12,3 +12,7 @@ status on failure.
 Run the verifier separately after the agent finishes. Do not let the agent edit
 the verifier or turn a missing assertion into a pass. Keep checks local or
 explicitly scoped to disposable test resources.
+
+Record disagreement between the agent's reported result and the independent
+result as a first-class outcome. Exercise timing, restart, duplicate-effect,
+and malformed-response boundaries when those are part of the task contract.

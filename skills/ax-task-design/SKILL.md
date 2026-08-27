@@ -9,6 +9,11 @@ task prompt from the verifier. Define what the agent may use (raw docs, CLI,
 Skill, MCP, or plugin) so surface comparisons are attributable. Prefer
 disposable local or test resources; never require production credentials.
 
+Make the task legible from the agent's available context: state where the
+source of truth, logs, acceptance criteria, and recovery instructions live.
+Include at least one boundary or restart assertion when the task has durable
+state.
+
 Record the fixture hash, prompt, harness/model, repetitions, and human
 interventions. Keep the task narrow enough that a failure can be reproduced and
 reported to the tool owner.
