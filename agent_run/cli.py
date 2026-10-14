@@ -4,7 +4,6 @@ import argparse
 import json
 import os
 import sys
-from pathlib import Path
 from typing import Any
 
 from .core import ExecutionStore, ReplayError
@@ -22,11 +21,21 @@ def emit(value: Any) -> None:
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(prog="agent-run")
+    root = argparse.ArgumentParser(
+        prog="agent-run",
+        description="Capture local evidence and replay recorded tool results without executing them.",
+        epilog=(
+            "Example: python3 -m agent_run --store /tmp/ax-evidence capture "
+            "--workspace . -- python3 -c 'print(42)'\n"
+            "Data commands emit JSON on stdout; errors go to stderr. "
+            "Place --store before the subcommand."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     root.add_argument(
         "--store",
         default=os.environ.get("AGENT_RUN_STORE", ".agent-runs"),
-        help="evidence store (default: .agent-runs)",
+        help="evidence store (precedence: --store, AGENT_RUN_STORE, .agent-runs)",
     )
     commands = root.add_subparsers(dest="command", required=True)
 
@@ -61,17 +70,34 @@ def parser() -> argparse.ArgumentParser:
 
     inspect = commands.add_parser("inspect", help="emit a run timeline")
     inspect.add_argument("run_id")
+    examples = {
+        "capture": "capture --workspace . -- python3 -c 'print(42)'",
+        "checkpoint": "checkpoint --run RUN_ID --workspace . --label after-change",
+        "record-tool": (
+            "record-tool --run RUN_ID --name example.read "
+            "--input '{}' --output '{\"status\":\"ok\"}'"
+        ),
+        "replay": "replay --checkpoint CHECKPOINT_ID --destination /tmp/ax-restored",
+        "replay-tool": "replay-tool --replay REPLAY_ID --name example.read --input '{}'",
+        "inspect": "inspect RUN_ID",
+    }
+    for name, command_parser in commands.choices.items():
+        command_parser.epilog = f"Example: python3 -m agent_run {examples[name]}"
     return root
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = parser().parse_args(argv)
-    store = ExecutionStore(args.store)
+    command_parser = parser()
+    args = command_parser.parse_args(argv)
+    if args.command == "capture":
+        command = list(args.argv)
+        if command and command[0] == "--":
+            command = command[1:]
+        if not command:
+            command_parser.error("capture requires a command after --; see capture --help")
     try:
+        store = ExecutionStore(args.store, create=args.command not in {"inspect", "replay-tool"})
         if args.command == "capture":
-            command = list(args.argv)
-            if command and command[0] == "--":
-                command = command[1:]
             result = store.capture(args.workspace, command)
             emit(result.__dict__)
             return result.exit_code

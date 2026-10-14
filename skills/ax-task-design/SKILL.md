@@ -17,3 +17,8 @@ state.
 Record the fixture hash, prompt, harness/model, repetitions, and human
 interventions. Keep the task narrow enough that a failure can be reproduced and
 reported to the tool owner.
+
+For CLI tasks, use `docs/cli-evaluation.md` to select observable interface
+assertions. Freeze stream connections, environment overrides, argument arrays,
+and deadlines alongside the fixture. Choose assertions from the task contract;
+do not substitute a style score for a verified task outcome.

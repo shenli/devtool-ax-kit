@@ -72,6 +72,11 @@ Start with [`AGENTS.md`](AGENTS.md), then choose the relevant skill under
 [`skills/`](skills/). The [documentation index](docs/README.md) links the
 methodology and example artifacts.
 
+For CLI-focused tasks, start with the [CLI evaluation protocol](docs/cli-evaluation.md).
+It also documents this kit's output, exit-status, and store-selection contracts.
+See [third-party notices](THIRD_PARTY_NOTICES.md) for external references and
+their license boundaries.
+
 ## Scope
 
 This is evaluation instrumentation—not a credential vault, sandbox provider,

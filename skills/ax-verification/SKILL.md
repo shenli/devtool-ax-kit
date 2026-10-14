@@ -20,3 +20,8 @@ infrastructure availability.
 Record disagreement between the agent's reported result and the independent
 result as a first-class outcome. Exercise timing, restart, duplicate-effect,
 and malformed-response boundaries when those are part of the task contract.
+
+For CLI surfaces, capture stdout, stderr, and exit status separately. Validate
+the promised data format without cleaning the output first, and compare file
+inventories before and after read operations. Use `docs/cli-evaluation.md` for
+case selection and distinguish a captured child's failure from wrapper misuse.

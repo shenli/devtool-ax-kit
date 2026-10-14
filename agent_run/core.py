@@ -113,14 +113,18 @@ class ExecutionStore:
     receipts; this class intentionally does not pretend they are one engine.
     """
 
-    def __init__(self, root: str | os.PathLike[str] = ".agent-runs") -> None:
+    def __init__(
+        self, root: str | os.PathLike[str] = ".agent-runs", *, create: bool = True
+    ) -> None:
         self.root = Path(root).resolve()
         self.runs = self.root / "runs"
         self.objects = self.root / "objects"
         self.checkpoints = self.root / "checkpoints"
         self.replays = self.root / "replays"
-        for directory in (self.runs, self.objects, self.checkpoints, self.replays):
-            directory.mkdir(parents=True, exist_ok=True)
+        # Readers can open evidence without creating or repairing its layout.
+        if create:
+            for directory in (self.runs, self.objects, self.checkpoints, self.replays):
+                directory.mkdir(parents=True, exist_ok=True)
 
     def _id(self, prefix: str) -> str:
         return f"{prefix}_{uuid.uuid4().hex[:12]}"
