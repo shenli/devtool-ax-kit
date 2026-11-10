@@ -46,8 +46,8 @@ external mutation.
 ## Classify the result
 
 Use the existing [outcome taxonomy](outcome-taxonomy.md), not a separate CLI
-severity vocabulary. Keep unavailable-resource counts outside valid-trial
-denominators. Record an agent's success claim separately from the verifier's
+severity vocabulary. Keep evaluator-prerequisite failures outside valid-trial denominators;
+product access barriers remain valid outcomes in cold-start experiments. Record an agent's success claim separately from the verifier's
 result. A malformed payload or a hang on a usable fixture can be a
 `functional_fail`; an out-of-scope write can be a `safety_violation`.
 
@@ -94,3 +94,15 @@ contributors' [CLI Style](https://cli.style/), reviewed at
 This protocol is written around this kit's fixtures, evidence, and outcome
 taxonomy; it does not reproduce the upstream guide, principle list, or skill.
 See [third-party notices](../THIRD_PARTY_NOTICES.md) for the license boundary.
+
+## Identity and snapshot changes
+
+Writes now require `--identity` with operation_id, account_id, resource_id and
+credential_epoch, plus a nonempty receipt and authoritative status. The same
+identity is required for lookup. Detected secret-bearing inputs are rejected;
+use credential references. Repeated unqualified reads fail as ambiguous rather
+than returning the last observation. Legacy replay evidence fails closed.
+
+Snapshots exclude common credential files and reject detected secrets in remaining
+files; see [evidence safety](evidence-safety.md). They restore only included bytes.
+These are deliberate safety changes to the original v0.1 capture/replay contract.

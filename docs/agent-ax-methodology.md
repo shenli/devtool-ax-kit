@@ -38,7 +38,18 @@ constant. Repeat enough to distinguish a pattern from a one-off.
 
 ## External-effect lifecycle
 
-For service-backed tasks, record: `provision → receipt → credential delivery → agent run → independent verify → cleanup`. Classify each trial as `pass`, `functional_fail`, `agent_report_disagrees`, `resource_unavailable`, or `safety_violation`; never count unavailable resources as functional results. Use unique identities and deliberate timing/concurrency trials for boundary-sensitive contracts.
+For service-backed tasks, record discovery, access, provisioning, credential
+delivery by reference, execution, independent verification, handoff and cleanup.
+Choose the cold-start or configured-resource track before running. Product access
+barriers are measured outcomes in cold-start trials; evaluator prerequisite
+failures are exclusions. Keep completion, validity, claim, safety and attribution
+separate using the [outcome taxonomy](outcome-taxonomy.md).
+
+The [experiment protocol](experiment-protocol.md) defines frozen manifests,
+repetitions, denominator rules and evaluator calibration. The
+[evidence policy](evidence-safety.md) defines snapshot exclusions and operation
+identity. Start with the [database task pack](../taskpacks/databases/README.md)
+for a runnable synthetic calibration, not product-performance evidence.
 
 ## Further reading
 
@@ -48,3 +59,19 @@ For service-backed tasks, record: `provision → receipt → credential delivery
 - Anthropic, [Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
 - Anthropic, [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)
 - [SWE-chat interaction dataset](https://arxiv.org/abs/2604.20779)
+
+## Research incorporated in the protocol
+
+Reviewed 2026-11-10. These are design inputs, not evidence of this kit's performance.
+
+- [Scope database benchmark](https://www.tryscope.com/blog/can-ai-agents-sign-up-and-use-your-database):
+  cold-start journey, independent readback, stopping stages, small-sample limits.
+- [τ-bench](https://arxiv.org/abs/2406.12045):
+  end-state checks and repeated reliability distinct from best-of-k success.
+- [Infrastructure noise](https://www.anthropic.com/research/infrastructure-noise):
+  resource guarantees, ceilings and execution conditions belong in the protocol.
+- [Tool evaluations](https://www.anthropic.com/engineering/writing-tools-for-agents):
+  realistic multi-step tasks and held-out cases for improvement claims.
+
+The protocol and fixtures are original project-specific work; no upstream task
+datasets, transcripts or skill text are redistributed.

@@ -121,5 +121,35 @@ class CLIContractTest(unittest.TestCase):
                     self.assertFalse(environment_store.exists())
 
 
+    def test_write_identity_round_trip_and_wrong_epoch(self) -> None:
+        captured = self.invoke("--store", str(self.store), "capture", "--", sys.executable, "-c", "pass")
+        run = json.loads(captured.stdout)["run_id"]
+        identity = {"operation_id": "op-1", "account_id": "account-1",
+                    "resource_id": "resource-1", "credential_epoch": "epoch-1"}
+        recorded = self.invoke("--store", str(self.store), "record-tool", "--run", run,
+                               "--name", "demo.write", "--input", '{"value":1}', "--output", '{}',
+                               "--effect", "write", "--receipt", '{"id":"receipt-1"}',
+                               "--authoritative-status", "committed", "--identity", json.dumps(identity))
+        self.assertEqual(recorded.returncode, 0, recorded.stderr)
+        checkpoint = self.invoke("--store", str(self.store), "checkpoint", "--run", run)
+        self.assertEqual(checkpoint.returncode, 0, checkpoint.stderr)
+        replay = self.invoke("--store", str(self.store), "replay",
+                             "--checkpoint", json.loads(checkpoint.stdout)["checkpoint_id"])
+        self.assertEqual(replay.returncode, 0, replay.stderr)
+        replay_id = json.loads(replay.stdout)["replay_id"]
+        before = self.evidence_bytes()
+        pinned = self.invoke("--store", str(self.store), "replay-tool", "--replay", replay_id,
+                             "--name", "demo.write", "--input", '{"value":1}', "--effect", "write",
+                             "--identity", json.dumps(identity))
+        self.assertEqual(pinned.returncode, 0, pinned.stderr)
+        self.assertFalse(json.loads(pinned.stdout)["executed"])
+        wrong = self.invoke("--store", str(self.store), "replay-tool", "--replay", replay_id,
+                            "--name", "demo.write", "--input", '{"value":1}', "--effect", "write",
+                            "--identity", json.dumps({**identity, "credential_epoch": "epoch-2"}))
+        self.assertEqual(wrong.returncode, 2)
+        self.assertIn("blocked unrecorded", wrong.stderr)
+        self.assertEqual(before, self.evidence_bytes())
+
+
 if __name__ == "__main__":
     unittest.main()

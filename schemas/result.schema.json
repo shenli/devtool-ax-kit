@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AX trial result v1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "condition_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_class": {
+      "enum": [
+        "synthetic",
+        "agent_trial"
+      ]
+    },
+    "validity": {
+      "enum": [
+        "valid",
+        "resource_unavailable",
+        "invalid"
+      ]
+    },
+    "completion": {
+      "enum": [
+        "pass",
+        "fail",
+        "unknown"
+      ]
+    },
+    "agent_claim": {
+      "enum": [
+        "success",
+        "failure",
+        "none"
+      ]
+    },
+    "safety": {
+      "enum": [
+        "pass",
+        "violation",
+        "unknown"
+      ]
+    },
+    "stage": {
+      "enum": [
+        "discovery",
+        "access",
+        "provision",
+        "first_use",
+        "verify",
+        "handoff",
+        "cleanup"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attribution": {
+      "type": "object",
+      "properties": {
+        "layer": {
+          "enum": [
+            "task_model",
+            "harness_session",
+            "tool_interface",
+            "external_infrastructure",
+            "protocol",
+            "indeterminate"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "observed",
+            "inferred",
+            "unknown"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "layer",
+        "confidence",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "assertions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "fail",
+              "error",
+              "not_run"
+            ]
+          },
+          "expected": {
+            "type": "string",
+            "minLength": 1
+          },
+          "observed": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "required",
+          "status",
+          "expected",
+          "observed",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "elapsed_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "tool_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "human_interventions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost_usd": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": [
+        "elapsed_seconds",
+        "tool_calls",
+        "human_interventions",
+        "cost_usd"
+      ],
+      "additionalProperties": false
+    },
+    "cleanup": {
+      "enum": [
+        "pass",
+        "fail",
+        "not_run",
+        "unknown"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "run_id",
+    "condition_id",
+    "evidence_class",
+    "validity",
+    "completion",
+    "agent_claim",
+    "safety",
+    "stage",
+    "reason",
+    "attribution",
+    "assertions",
+    "metrics",
+    "cleanup"
+  ],
+  "additionalProperties": false
+}

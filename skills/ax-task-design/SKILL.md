@@ -1,24 +1,27 @@
 ---
 name: ax-task-design
-description: Design controlled coding-agent tasks for measuring developer-tool agent experience.
+description: Design controlled developer-tool AX experiments, fixtures and task packs for onboarding, use and recovery comparisons.
 ---
 
-Create a small, realistic task with a frozen starting fixture, explicit allowed
-side effects, an independent verifier, and a clear stop condition. Separate the
-task prompt from the verifier. Define what the agent may use (raw docs, CLI,
-Skill, MCP, or plugin) so surface comparisons are attributable. Prefer
-disposable local or test resources; never require production credentials.
+Use the [experiment protocol](../../docs/experiment-protocol.md) to freeze a
+manifest before trials. Inputs are the workflow, supported product contract,
+candidate surfaces, resource boundary and evaluation budget.
 
-Make the task legible from the agent's available context: state where the
-source of truth, logs, acceptance criteria, and recovery instructions live.
-Include at least one boundary or restart assertion when the task has durable
-state.
+1. Choose cold-start onboarding or configured-resource use. A signup barrier is
+   measured behavior in the former and may be a prerequisite failure in the latter.
+2. Choose unassisted discovery or guided use. Supply acceptance criteria without
+   revealing the solution path when discoverability is being measured.
+3. Write the exact prompt, minimal realistic fixture, allowed effects, stage
+   milestones and stop conditions. Include restart/boundary assertions for durable
+   state; distinguish temporary access, ownership handoff and cleanup.
+4. Freeze fixture/evaluator hashes, condition versions, repetitions, randomized
+   order seed, reset policy, intervention limits and analysis. Separate development
+   fixtures from held-out cases.
+5. Validate the manifest with `scripts/validate_protocol.py`. Deliver the manifest,
+   prompt, fixture, evaluator contract and calibration cases; no trial is implied.
 
-Record the fixture hash, prompt, harness/model, repetitions, and human
-interventions. Keep the task narrow enough that a failure can be reproduced and
-reported to the tool owner.
-
-For CLI tasks, use `docs/cli-evaluation.md` to select observable interface
-assertions. Freeze stream connections, environment overrides, argument arrays,
-and deadlines alongside the fixture. Choose assertions from the task contract;
-do not substitute a style score for a verified task outcome.
+For CLI cases, use [CLI evaluation](../../docs/cli-evaluation.md) for stream,
+configuration and argument assertions. For database examples, use the
+[database task pack](../../taskpacks/databases/README.md).
+Stop design when the required resource or assertion cannot be specified; record
+the missing prerequisite instead of weakening success criteria.

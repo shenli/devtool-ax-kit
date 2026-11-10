@@ -20,6 +20,7 @@ DEFAULT_POLICY = {
     "external_write": "block_unrecorded",
     "recorded_write": "return_original_receipt",
     "credentials": "references_only",
+    "identity_version": 2,
 }
 
 IGNORED_PARTS = {
@@ -30,7 +31,17 @@ IGNORED_PARTS = {
     "node_modules",
 }
 
+SECRET_FIELDS = re.compile(
+    r"(?i)(api[_-]?key|token|secret|password|authorization|"
+    r"connection[_-]?string|database[_-]?url|claim[_-]?url|cookie)"
+)
+SECRET_FILE_NAMES = {".npmrc", ".netrc", ".pypirc", "credentials", "id_rsa", "id_ed25519"}
+IDENTITY_FIELDS = {"operation_id", "account_id", "resource_id", "credential_epoch"}
+
 SECRET_PATTERNS = (
+    re.compile(r"(?i)[a-z][a-z0-9+.-]*://[^\s/]+:[^\s@]+@[^\s\"'<>]+"),
+    re.compile(r"(?i)https?://[^\s\"'<>]*[?&](?:token|key|secret|signature|claim)=[^\s\"'<>]+"),
+    re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     re.compile(r"(?i)(bearer\s+)[a-z0-9._~+/=-]+"),
     re.compile(r"\bgQ[A-Za-z0-9_-]{20,}\b"),
     re.compile(
@@ -83,12 +94,22 @@ def redact(value: Any) -> Any:
     if isinstance(value, dict):
         result: dict[str, Any] = {}
         for key, item in value.items():
-            if re.search(r"(?i)(api[_-]?key|token|secret|password|authorization)", str(key)):
+            if SECRET_FIELDS.search(str(key)):
                 result[str(key)] = "[REDACTED]"
             else:
                 result[str(key)] = redact(item)
         return result
     return value
+
+
+def contains_secret_field(value: Any) -> bool:
+    """Reject lossy pre-redacted inputs as well as plaintext credential fields."""
+    if isinstance(value, dict):
+        return any(SECRET_FIELDS.search(str(key)) or contains_secret_field(item)
+                   for key, item in value.items())
+    if isinstance(value, (list, tuple)):
+        return any(contains_secret_field(item) for item in value)
+    return False
 
 
 def tool_key(name: str, tool_input: Any) -> str:
@@ -212,28 +233,45 @@ class ExecutionStore:
             raise ValueError(f"workspace is not a directory: {workspace_path}")
 
         entries: list[dict[str, Any]] = []
-        sources: list[tuple[Path, str]] = []
+        sources: list[tuple[str, bytes, int]] = []
+        excluded: list[str] = []
         for path in self._workspace_files(workspace_path):
             relative = path.relative_to(workspace_path).as_posix()
-            content_hash = digest(path.read_bytes())
+            if (path.name == ".env" or path.name.startswith(".env.")
+                    or path.name in SECRET_FILE_NAMES
+                    or path.suffix.lower() in {".pem", ".key", ".p12", ".pfx"}
+                    or any(part in {".aws", ".ssh", ".gnupg"} for part in path.relative_to(workspace_path).parts)):
+                excluded.append(relative)
+                continue
+            # Persist the exact bytes inspected, not a second read of a changing file.
+            content = path.read_bytes()
+            text = content.decode("utf-8", errors="replace")
+            try:
+                value = json.loads(text)
+            except (ValueError, TypeError):
+                value = text
+            if redact(value) != value or redact_text(text) != text:
+                raise ValueError("snapshot rejected suspected secret content; move credentials outside the workspace")
             mode = stat.S_IMODE(path.stat().st_mode)
             entries.append(
-                {"path": relative, "sha256": content_hash, "size": path.stat().st_size, "mode": mode}
+                {"path": relative, "sha256": digest(content), "size": len(content), "mode": mode}
             )
-            sources.append((path, relative))
+            sources.append((relative, content, mode))
 
-        snapshot_id = digest(canonical_json(entries))
+        envelope = {"files": entries, "excluded": excluded, "policy": "secret-free-v1"}
+        snapshot_id = digest(canonical_json(envelope))
         object_dir = self.objects / snapshot_id
         if not object_dir.exists():
             files_dir = object_dir / "files"
             files_dir.mkdir(parents=True)
-            for source, relative in sources:
+            for relative, content, mode in sources:
                 destination = files_dir / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(source, destination)
+                destination.write_bytes(content)
+                destination.chmod(mode)
             self._json_write(
                 object_dir / "manifest.json",
-                {"snapshot_id": snapshot_id, "created_at": utc_now(), "files": entries},
+                {"snapshot_id": snapshot_id, "created_at": utc_now(), **envelope},
             )
         return snapshot_id
 
@@ -283,6 +321,19 @@ class ExecutionStore:
         self.append_event(run_id, "checkpoint", checkpoint)
         return checkpoint
 
+    def _tool_identity(self, effect: str, identity: dict[str, str] | None) -> dict[str, str] | None:
+        if effect not in {"read", "write"}:
+            raise ValueError("effect must be 'read' or 'write'")
+        if identity is None:
+            if effect == "write":
+                raise ValueError("external writes require operation, account, resource and credential epoch identity")
+            return None
+        if (not isinstance(identity, dict) or set(identity) != IDENTITY_FIELDS
+                or any(not isinstance(v, str) or not v.strip() for v in identity.values())
+                or redact(identity) != identity):
+            raise ValueError("identity requires four nonempty, non-secret reference fields")
+        return identity
+
     def record_tool(
         self,
         run_id: str,
@@ -293,27 +344,37 @@ class ExecutionStore:
         effect: str = "read",
         receipt: Any | None = None,
         authoritative_status: str | None = None,
+        identity: dict[str, str] | None = None,
     ) -> dict[str, Any]:
-        if effect not in {"read", "write"}:
-            raise ValueError("effect must be 'read' or 'write'")
-        if effect == "write" and receipt is None:
-            raise ValueError("external writes require a receipt")
-        safe_input = redact(tool_input)
-        key = tool_key(name, safe_input)
-        self.append_event(
-            run_id,
-            "tool_intent",
-            {"name": name, "input": safe_input, "effect": effect, "tool_key": key},
-        )
+        identity = self._tool_identity(effect, identity)
+        if effect == "write" and (not receipt or not authoritative_status):
+            raise ValueError("external writes require a nonempty receipt and authoritative status")
+        # Adapters replace credentials with opaque references before this boundary.
+        if contains_secret_field(tool_input) or redact(tool_input) != tool_input:
+            raise ValueError("tool input must contain credential references, not secrets")
         result = {
+            "identity_version": 2,
             "name": name,
-            "input": safe_input,
+            "input": tool_input,
             "output": redact(output),
             "effect": effect,
             "receipt": redact(receipt),
             "authoritative_status": authoritative_status,
-            "tool_key": key,
+            "identity": identity,
+            "tool_key": tool_key(name, {"input": tool_input, "effect": effect, "identity": identity}),
         }
+        # Retrying evidence ingestion is idempotent; conflicting evidence is not.
+        if identity is not None:
+            for event in self.events(run_id):
+                previous = event.get("identity")
+                if event["kind"] == "tool_result" and previous and previous["operation_id"] == identity["operation_id"]:
+                    if all(event.get(k) == v for k, v in result.items()):
+                        return result
+                    raise ValueError("operation identity already recorded with different evidence")
+        self.append_event(run_id, "tool_intent", {
+            "name": name, "input": tool_input, "effect": effect,
+            "identity": identity, "tool_key": result["tool_key"],
+        })
         self.append_event(run_id, "tool_result", result)
         return result
 
@@ -326,23 +387,16 @@ class ExecutionStore:
         if not checkpoint_path.exists():
             raise KeyError(f"unknown checkpoint: {checkpoint_id}")
         checkpoint = self._json_read(checkpoint_path)
+        events = self.events(checkpoint["run_id"], checkpoint["trajectory_offset"])
+        pinned = [event for event in events if event["kind"] == "tool_result"]
+        if any(event.get("identity_version") != 2 for event in pinned):
+            raise ReplayError("legacy tool evidence lacks safe identity; inspect it without replay")
         replay_id = self._id("replay")
         replay_dir = self.replays / replay_id
         workspace = Path(destination).resolve() if destination else replay_dir / "workspace"
         self.restore(checkpoint["workspace_snapshot_id"], workspace)
-        pinned: dict[str, Any] = {}
-        events = self.events(checkpoint["run_id"], checkpoint["trajectory_offset"])
-        for event in events:
-            if event["kind"] == "tool_result":
-                pinned[event["tool_key"]] = {
-                    "name": event["name"],
-                    "input": event["input"],
-                    "output": event["output"],
-                    "effect": event["effect"],
-                    "receipt": event.get("receipt"),
-                    "authoritative_status": event.get("authoritative_status"),
-                }
         replay = {
+            "identity_version": 2,
             "replay_id": replay_id,
             "checkpoint_id": checkpoint_id,
             "source_run_id": checkpoint["run_id"],
@@ -361,17 +415,23 @@ class ExecutionStore:
         tool_input: Any,
         *,
         effect: str = "read",
+        identity: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         replay_path = self.replays / replay_id / "manifest.json"
         if not replay_path.exists():
             raise KeyError(f"unknown replay: {replay_id}")
         replay = self._json_read(replay_path)
-        safe_input = redact(tool_input)
-        key = tool_key(name, safe_input)
-        if key in replay["pinned"]:
-            result = dict(replay["pinned"][key])
-            result.update({"source": "pinned", "executed": False})
-            return result
+        if replay.get("identity_version") != 2:
+            raise ReplayError("legacy replay lacks safe identity; inspect it without replay")
+        identity = self._tool_identity(effect, identity)
+        if contains_secret_field(tool_input) or redact(tool_input) != tool_input:
+            raise ReplayError("tool input must contain credential references, not secrets")
+        key = tool_key(name, {"input": tool_input, "effect": effect, "identity": identity})
+        matches = [event for event in replay["pinned"] if event["tool_key"] == key]
+        if len(matches) > 1:
+            raise ReplayError("ambiguous repeated lookup; record explicit invocation identities")
+        if matches:
+            return {**matches[0], "source": "pinned", "executed": False}
         if effect == "write":
             raise ReplayError(f"blocked unrecorded external write: {name}")
         raise ReplayError(f"no pinned output for external read: {name}")

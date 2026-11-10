@@ -39,12 +39,15 @@ def main() -> int:
             "payload_hash": "sha256:demo-payload",
         }
 
+        identity = {"operation_id": "welcome-42", "account_id": "demo-account",
+                    "resource_id": "demo-outbox", "credential_epoch": "epoch-1"}
         store.record_tool(
             run_id,
             "resend.emails.send",
             send_input,
             {"client_observation": "timeout", "body_received": False},
             effect="write",
+            identity=identity,
             receipt={"email_id": "email_demo_123", "request_id": "request_demo_456"},
             authoritative_status="accepted",
         )
@@ -59,6 +62,7 @@ def main() -> int:
             "resend.emails.send",
             send_input,
             effect="write",
+            identity=identity,
         )
         blocked = False
         try:
@@ -67,6 +71,7 @@ def main() -> int:
                 "resend.emails.send",
                 {**send_input, "business_event": "welcome/43", "idempotency_key": "afs/demo/welcome/43"},
                 effect="write",
+                identity=identity,
             )
         except ReplayError:
             blocked = True

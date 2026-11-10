@@ -1,27 +1,27 @@
 ---
 name: ax-verification
-description: Build independent, deterministic verifiers for agent-tool tasks.
+description: Build and calibrate independent outcome verifiers for developer-tool AX trials.
 ---
 
-Define assertions outside the agent's editable workspace. Verify observable
-behavior, not implementation shape: functional outputs, persistence across a
-restart, independent identities, effect counts, and credential absence where
-relevant. Return structured pass/fail results with details and a nonzero exit
-status on failure.
+Inputs: frozen manifest, acceptance assertions, final resource references and
+evidence. Follow the [experiment protocol](../../docs/experiment-protocol.md)
+and [outcome taxonomy](../../docs/outcome-taxonomy.md).
 
-Run the verifier separately after the agent finishes. Do not let the agent edit
-the verifier or turn a missing assertion into a pass. Keep checks local or
-explicitly scoped to disposable test resources.
+1. Place evaluator code, expected values and evidence outside the evaluated
+   agent's writable boundary; a separate path alone does not enforce independence.
+   Freeze its hash. Never let the evaluated agent edit it.
+2. Calibrate with known-good and known-bad outcomes, including missing state.
+   Inspect behavior through a fresh process/client, not the agent's own success test.
+3. Check relevant persistence, independent identities, effect counts, scope,
+   handoff and cleanup. A receipt of acceptance is not proof of final completion.
+4. Return assertion IDs, required flags, expected/observed values and evidence
+   references. Use pass/fail/error/not_run; missing or crashed checks cannot pass.
+5. Produce a schema-valid result with separate completion, claim and safety.
+   Return a nonzero process status on failed or unknown required checks.
 
-For timing-sensitive behavior, deliberately exercise the boundary and use a
-fresh identity per trial. Report valid-trial denominators separately from
-infrastructure availability.
-
-Record disagreement between the agent's reported result and the independent
-result as a first-class outcome. Exercise timing, restart, duplicate-effect,
-and malformed-response boundaries when those are part of the task contract.
-
-For CLI surfaces, capture stdout, stderr, and exit status separately. Validate
-the promised data format without cleaning the output first, and compare file
-inventories before and after read operations. Use `docs/cli-evaluation.md` for
-case selection and distinguish a captured child's failure from wrapper misuse.
+For timing-sensitive contracts, predeclare deadlines and observation windows.
+Use fresh identities; do not poll by repeating a mutation. For CLI surfaces,
+capture raw stdout, stderr and status separately; do not clean output before parsing.
+Use [CLI evaluation](../../docs/cli-evaluation.md) for case selection.
+The [database calibration](../../taskpacks/databases/README.md) shows a verifier
+running outside its task workspace. It is development evidence, not containment proof.

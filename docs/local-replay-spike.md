@@ -1,6 +1,6 @@
 # Local pinned-replay spike
 
-**Evidence class:** synthetic implementation evidence; does not count as E3 customer evidence  
+**Evidence class:** synthetic implementation evidence; does not count as observed customer or agent-trial evidence
 **Command:** `python3 scripts/replay_experiment.py`
 
 ## Hypothesis under test

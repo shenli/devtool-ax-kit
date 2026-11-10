@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "experiment_id": "sqlite-lifecycle-calibration-v1",
+  "task_id": "database-lifecycle",
+  "track": "cold_start",
+  "prompt": "Create a local notes database, insert the fixture marker exactly once, reconcile a lost response using the original receipt, update the marker, read it through a fresh client, then remove the disposable database.",
+  "fixture_sha256": "d87573eac0206f12b3e728949cfe12722413bddb0833bfe75d0410870520a1ee",
+  "verifier_sha256": "1f0a7cfdc5412ff2fbf74afaa1b1d318a38e34ab7edb25d7698e01ba9c69a8c8",
+  "conditions": [
+    {
+      "id": "reference-local",
+      "surface": "Python sqlite3 reference operations",
+      "model": "none; synthetic control",
+      "harness": "scripts/database_pilot.py",
+      "versions": "Python 3.11+; record actual runtime in capture",
+      "discovery": "guided"
+    }
+  ],
+  "repetitions": 3,
+  "order_seed": 17,
+  "reset_policy": "fresh temporary workspace and evidence store for every lifecycle",
+  "budget": {
+    "seconds": 60,
+    "tool_calls": 20,
+    "usd": 0
+  },
+  "environment": {
+    "cpu": "record actual CPU allocation at execution",
+    "memory": "record actual RAM allocation at execution",
+    "network": "off",
+    "concurrency": 1
+  },
+  "human_assistance": {
+    "max_interventions": 0,
+    "allowed": "none"
+  },
+  "exclusions": "evaluator or runtime faults invalidate calibration; product access is not exercised",
+  "primary_metric": "end_to_end_completion",
+  "aggregation": "per_condition",
+  "stopping_rule": "all three reference lifecycles or first calibration failure",
+  "split": "development",
+  "sources": [
+    "https://www.tryscope.com/blog/can-ai-agents-sign-up-and-use-your-database"
+  ]
+}

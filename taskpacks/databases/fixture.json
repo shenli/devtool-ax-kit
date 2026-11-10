@@ -1,0 +1,16 @@
+{
+  "fixture_version": 1,
+  "initial_state": "empty workspace",
+  "database": "notes.sqlite",
+  "table": "notes",
+  "columns": [
+    "id INTEGER",
+    "content TEXT"
+  ],
+  "initial_marker": "ax-fixture-first",
+  "updated_marker": "ax-fixture-updated",
+  "allowed_resources": [
+    "notes.sqlite"
+  ],
+  "network": "off"
+}

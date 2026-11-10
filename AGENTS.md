@@ -27,4 +27,7 @@ and `docs/outcome-taxonomy.md`. These are the repository sources of truth.
 ```bash
 python3 -m unittest discover -s tests -v
 python3 scripts/replay_experiment.py
+python3 scripts/database_pilot.py
+python3 scripts/validate_skills.py
+python3 scripts/validate_protocol.py taskpacks/databases/experiment.json
 ```

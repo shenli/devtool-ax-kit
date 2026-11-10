@@ -1,14 +1,23 @@
 ---
 name: ax-failure-report
-description: Turn replicated agent-experience findings into concise vendor reports.
+description: Turn replicated AX findings into private evidence-led vendor reports and regression candidates.
 ---
 
-Write a private, evidence-led report. State the repeated behavior before
-offering attribution. Include the exact protocol, fixture and verifier hashes,
-run IDs, repetition table, deterministic checks, safety boundary, limits, and a
-minimal regression candidate.
+Inputs: frozen protocol, repeated results, independent assertions and redacted
+evidence. Use the [report template](../../docs/failure-report-template.md).
 
-Ask the vendor to confirm the supported contract, review a reproduction, or
-provide a realistic regression case. Do not ask for agreement with a thesis.
-Share redacted evidence only: never attach credentials, raw secret-bearing
-trajectories, production data, or unbounded logs.
+1. Lead with observed behavior and impact, then frequency and uncertainty.
+   Separate observation from causal attribution and describe non-reproductions.
+2. Include task/fixture/verifier versions and hashes, run IDs, surface conditions,
+   budgets, interventions, stopping stage and all denominator exclusions.
+3. Use the [shared taxonomy](../../docs/outcome-taxonomy.md). Record functional,
+   safety and claim outcomes separately, with attribution confidence and evidence.
+4. Propose the smallest contract-preserving fix and executable regression case.
+   Verify the fix on development cases and reserve held-out cases for broader claims.
+5. State freshness, evidence provenance and limits. Ask the vendor to confirm
+   the supported contract or reproduce the failure, not endorse a thesis.
+
+Deliver a private draft and evidence index. Do not transmit it without authorization.
+Never attach credentials, claim URLs, raw secret-bearing trajectories or unbounded logs.
+If repetition or independent verification is missing, label the finding preliminary.
+Do not assign undefined E0–E6 grades; describe synthetic, observed or replicated evidence.

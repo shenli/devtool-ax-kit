@@ -57,6 +57,7 @@ def parser() -> argparse.ArgumentParser:
     tool.add_argument("--effect", choices=("read", "write"), default="read")
     tool.add_argument("--receipt")
     tool.add_argument("--authoritative-status")
+    tool.add_argument("--identity", help="JSON operation_id, account_id, resource_id, credential_epoch; required for writes")
 
     replay = commands.add_parser("replay", help="restore a checkpoint with pinned outputs")
     replay.add_argument("--checkpoint", required=True)
@@ -67,6 +68,7 @@ def parser() -> argparse.ArgumentParser:
     replay_tool.add_argument("--name", required=True)
     replay_tool.add_argument("--input", required=True)
     replay_tool.add_argument("--effect", choices=("read", "write"), default="read")
+    replay_tool.add_argument("--identity", help="exact identity from the recorded operation")
 
     inspect = commands.add_parser("inspect", help="emit a run timeline")
     inspect.add_argument("run_id")
@@ -121,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
                     effect=args.effect,
                     receipt=parse_json(args.receipt) if args.receipt is not None else None,
                     authoritative_status=args.authoritative_status,
+                    identity=parse_json(args.identity) if args.identity is not None else None,
                 )
             )
             return 0
@@ -134,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.name,
                     parse_json(args.input),
                     effect=args.effect,
+                    identity=parse_json(args.identity) if args.identity is not None else None,
                 )
             )
             return 0

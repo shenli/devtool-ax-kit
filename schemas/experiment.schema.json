@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AX experiment v1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "track": {
+      "enum": [
+        "cold_start",
+        "configured_resource"
+      ]
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fixture_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "verifier_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "surface": {
+            "type": "string",
+            "minLength": 1
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "harness": {
+            "type": "string",
+            "minLength": 1
+          },
+          "versions": {
+            "type": "string",
+            "minLength": 1
+          },
+          "discovery": {
+            "enum": [
+              "unassisted",
+              "guided"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "surface",
+          "model",
+          "harness",
+          "versions",
+          "discovery"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "repetitions": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "order_seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reset_policy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "seconds": {
+          "type": "number",
+          "minimum": 1
+        },
+        "tool_calls": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "usd": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "seconds",
+        "tool_calls",
+        "usd"
+      ],
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "minLength": 1
+        },
+        "memory": {
+          "type": "string",
+          "minLength": 1
+        },
+        "network": {
+          "type": "string",
+          "minLength": 1
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "cpu",
+        "memory",
+        "network",
+        "concurrency"
+      ],
+      "additionalProperties": false
+    },
+    "human_assistance": {
+      "type": "object",
+      "properties": {
+        "max_interventions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "allowed": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "max_interventions",
+        "allowed"
+      ],
+      "additionalProperties": false
+    },
+    "exclusions": {
+      "type": "string",
+      "minLength": 1
+    },
+    "primary_metric": {
+      "enum": [
+        "end_to_end_completion",
+        "conditional_functional_success"
+      ]
+    },
+    "aggregation": {
+      "enum": [
+        "per_condition"
+      ]
+    },
+    "stopping_rule": {
+      "type": "string",
+      "minLength": 1
+    },
+    "split": {
+      "enum": [
+        "development",
+        "held_out"
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "task_id",
+    "track",
+    "prompt",
+    "fixture_sha256",
+    "verifier_sha256",
+    "conditions",
+    "repetitions",
+    "order_seed",
+    "reset_policy",
+    "budget",
+    "environment",
+    "human_assistance",
+    "exclusions",
+    "primary_metric",
+    "aggregation",
+    "stopping_rule",
+    "split",
+    "sources"
+  ],
+  "additionalProperties": false
+}

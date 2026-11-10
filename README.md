@@ -35,6 +35,8 @@ git clone https://github.com/shenli/devtool-ax-kit.git
 cd devtool-ax-kit
 python3 -m unittest discover -s tests -v
 python3 scripts/replay_experiment.py
+python3 scripts/database_pilot.py
+python3 scripts/validate_skills.py
 python3 -m agent_run --help
 ```
 
@@ -50,19 +52,24 @@ Record a receipted effect, then replay it without executing the write:
 python3 -m agent_run record-tool --run RUN_ID \
   --name example.send --input '{"event":"welcome/42"}' \
   --output '{"status":"accepted"}' --effect write \
-  --receipt '{"request_id":"demo-123"}' --authoritative-status accepted
+  --receipt '{"request_id":"demo-123"}' --authoritative-status accepted \
+  --identity '{"operation_id":"welcome-42","account_id":"demo","resource_id":"outbox","credential_epoch":"epoch-1"}'
 python3 -m agent_run checkpoint --run RUN_ID --workspace /path/to/workspace --label after-write
 python3 -m agent_run replay --checkpoint CHECKPOINT_ID
 ```
 
 Pinned replay returns the original receipt without executing the write; an
-unrecorded write is rejected.
+unrecorded write is rejected. Supply the same identity to `replay-tool`.
+See [evidence safety and v2 migration](docs/evidence-safety.md) for credential
+references, snapshot exclusions, repeated reads and legacy replay restrictions.
 
 ## Repository map
 
 ```text
 agent_run/                  capture, snapshots, checkpoints, replay
 skills/                     reusable AX evaluation instructions
+schemas/                    experiment and trial result contracts
+taskpacks/databases/         local fixtures and independent verifier
 docs/                       methodology, taxonomy, and report templates
 tests/                      local regression tests
 scripts/replay_experiment.py synthetic mechanics demonstration
@@ -87,5 +94,6 @@ outside the agent's editable workspace.
 ## Contributing
 
 Keep tasks vendor-neutral, verifiers deterministic, and evidence reproducible.
-Run the unit tests and skill validators before opening a pull request. See
+Run the unit tests, `python3 scripts/validate_skills.py`, and both synthetic
+pilots before opening a pull request. See
 [`SECURITY.md`](SECURITY.md) before sharing trajectories or external-run data.
